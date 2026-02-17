@@ -1,0 +1,11 @@
+{
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Voyager Travel",
+        "supportEmail": "cabhay0407@gmail.com"
+      }
+    }
+  }
+}

@@ -1,28 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { auth } from "@/lib/firebase/config";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, UserCircle } from "lucide-react";
 
 const NAV_LINKS = [
     { href: "/", label: "Home" },
     { href: "/explore", label: "Explore" },
     { href: "/my-trips", label: "My Trips" },
     { href: "/social", label: "Social" },
+    { href: "/profile", label: "Profile" },
 ] as const;
 
 export function Navbar() {
     const pathname = usePathname();
+    const router = useRouter();
     const [open, setOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const [user, setUser] = useState<User | null>(null);
+    const [authLoading, setAuthLoading] = useState(true);
 
-    // TODO: Replace with real auth state from Firebase/Supabase
-    const isLoggedIn = false;
+    // Listen to Firebase auth state
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
+            setAuthLoading(false);
+        });
+        return () => unsubscribe();
+    }, []);
 
     // Handle scroll effect
     useEffect(() => {
@@ -33,11 +45,13 @@ export function Navbar() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
+    const handleLogout = async () => {
+        await signOut(auth);
+        router.push("/");
+    };
+
     const isHome = pathname === "/";
 
-    // Navbar style based on scroll and page
-    // On Home: Transparent at top, Glass/Solid on scroll
-    // On Others: Always solid/glass
     const navClass = cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b",
         isHome && !scrolled
@@ -78,10 +92,20 @@ export function Navbar() {
 
                 {/* Desktop Auth */}
                 <div className="hidden md:flex items-center gap-4">
-                    {isLoggedIn ? (
-                        <Button variant="ghost" size="sm" className={textColor}>
-                            Log out
-                        </Button>
+                    {authLoading ? null : user ? (
+                        <div className="flex items-center gap-3">
+                            <span className={cn("text-sm font-medium hidden lg:inline", textColor)}>
+                                {user.displayName || user.email?.split("@")[0]}
+                            </span>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleLogout}
+                                className={cn("hover:bg-white/10", textColor)}
+                            >
+                                <LogOut className="w-4 h-4 mr-1" /> Log out
+                            </Button>
+                        </div>
                     ) : (
                         <>
                             <Button
@@ -136,10 +160,22 @@ export function Navbar() {
                                     </Link>
                                 ))}
                             </div>
-                            <div className="pt-8">
-                                <Button className="w-full rounded-full bg-primary text-white" size="lg" asChild>
-                                    <Link href="/signup">Get Started</Link>
-                                </Button>
+                            <Separator />
+                            <div className="pt-2">
+                                {user ? (
+                                    <Button
+                                        className="w-full rounded-full"
+                                        variant="outline"
+                                        size="lg"
+                                        onClick={() => { handleLogout(); setOpen(false); }}
+                                    >
+                                        <LogOut className="w-4 h-4 mr-2" /> Log out
+                                    </Button>
+                                ) : (
+                                    <Button className="w-full rounded-full bg-primary text-white" size="lg" asChild>
+                                        <Link href="/signup" onClick={() => setOpen(false)}>Get Started</Link>
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </SheetContent>

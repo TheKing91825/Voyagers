@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase/config";
 import { ReviewCard } from "@/components/social/review-card";
 import { SuggestedFriends } from "@/components/social/suggested-friends";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Loader2, Star } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -18,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-// Mock Data for Feed
+// Fallback mock data
 const MOCK_REVIEWS = [
     {
         id: "1",
@@ -62,11 +64,141 @@ const MOCK_REVIEWS = [
 
 export default function SocialPage() {
     const [isReviewOpen, setIsReviewOpen] = useState(false);
+    const [reviews, setReviews] = useState<any[]>(MOCK_REVIEWS);
+    const [loading, setLoading] = useState(true);
+    const [token, setToken] = useState<string | null>(null);
+    const [submitting, setSubmitting] = useState(false);
 
-    const handleSubmit = () => {
-        toast.success("Review posted successfully!");
-        setIsReviewOpen(false);
+    // Review form state
+    const [reviewCity, setReviewCity] = useState("");
+    const [reviewCountry, setReviewCountry] = useState("");
+    const [reviewContent, setReviewContent] = useState("");
+    const [reviewRating, setReviewRating] = useState(5);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                setReviews(MOCK_REVIEWS);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const t = await user.getIdToken();
+                setToken(t);
+
+                const res = await fetch("/api/social/reviews", {
+                    headers: { Authorization: `Bearer ${t}` },
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.reviews && data.reviews.length > 0) {
+                        const mapped = data.reviews.map((r: any) => ({
+                            id: r.id,
+                            user: {
+                                username: r.users?.username || "traveler",
+                                avatar_url: r.users?.avatar_url || null,
+                            },
+                            city: r.city,
+                            country: r.country,
+                            rating: r.rating,
+                            content: r.content,
+                            images: r.image_urls || [],
+                            likes: r.likes_count || 0,
+                            comments: r.comments_count || 0,
+                            createdAt: formatTimeAgo(r.created_at),
+                        }));
+                        setReviews([...mapped, ...MOCK_REVIEWS]);
+                    }
+                }
+            } catch {
+                // Keep mock data
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    const handleSubmit = async () => {
+        if (!reviewCity.trim() || !reviewContent.trim()) {
+            toast.error("Please fill in the destination and review.");
+            return;
+        }
+
+        if (!token) {
+            toast.error("Please log in to post a review.");
+            return;
+        }
+
+        setSubmitting(true);
+
+        try {
+            const res = await fetch("/api/social/reviews", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    city: reviewCity.trim(),
+                    country: reviewCountry.trim() || "Unknown",
+                    rating: reviewRating,
+                    content: reviewContent.trim(),
+                }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                toast.success("Review posted successfully! ✍️");
+
+                // Add to the top of the feed
+                const currentUser = auth.currentUser;
+                setReviews((prev) => [
+                    {
+                        id: data.review?.id || Date.now().toString(),
+                        user: {
+                            username: currentUser?.displayName || currentUser?.email?.split("@")[0] || "you",
+                            avatar_url: currentUser?.photoURL || null,
+                        },
+                        city: reviewCity.trim(),
+                        country: reviewCountry.trim() || "Unknown",
+                        rating: reviewRating,
+                        content: reviewContent.trim(),
+                        images: [],
+                        likes: 0,
+                        comments: 0,
+                        createdAt: "just now",
+                    },
+                    ...prev,
+                ]);
+
+                // Reset form
+                setReviewCity("");
+                setReviewCountry("");
+                setReviewContent("");
+                setReviewRating(5);
+                setIsReviewOpen(false);
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                toast.error(errData.error || "Failed to post review.");
+            }
+        } catch {
+            toast.error("Network error. Please try again.");
+        } finally {
+            setSubmitting(false);
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="flex h-screen w-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="container max-w-6xl mx-auto pt-24 pb-8 px-4 md:px-6">
@@ -91,28 +223,66 @@ export default function SocialPage() {
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="city">City</Label>
+                                            <Input
+                                                id="city"
+                                                placeholder="e.g. Kyoto"
+                                                value={reviewCity}
+                                                onChange={(e) => setReviewCity(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="country">Country</Label>
+                                            <Input
+                                                id="country"
+                                                placeholder="e.g. Japan"
+                                                value={reviewCountry}
+                                                onChange={(e) => setReviewCountry(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="destination">Destination</Label>
-                                        <Input id="destination" placeholder="e.g. Kyoto, Japan" />
+                                        <Label>Rating</Label>
+                                        <div className="flex gap-1">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <button
+                                                    key={star}
+                                                    type="button"
+                                                    onClick={() => setReviewRating(star)}
+                                                    className="p-1 transition-colors"
+                                                >
+                                                    <Star
+                                                        className={`w-6 h-6 ${star <= reviewRating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"}`}
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="review">Your Review</Label>
                                         <textarea
                                             id="review"
                                             placeholder="Tell us about it..."
+                                            value={reviewContent}
+                                            onChange={(e) => setReviewContent(e.target.value)}
                                             className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                         />
                                     </div>
                                 </div>
                                 <DialogFooter>
-                                    <Button onClick={handleSubmit}>Post Review</Button>
+                                    <Button onClick={handleSubmit} disabled={submitting}>
+                                        {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                                        Post Review
+                                    </Button>
                                 </DialogFooter>
                             </DialogContent>
                         </Dialog>
                     </div>
 
                     <div className="space-y-6">
-                        {MOCK_REVIEWS.map((review) => (
+                        {reviews.map((review) => (
                             <ReviewCard key={review.id} review={review} />
                         ))}
                     </div>
@@ -139,4 +309,19 @@ export default function SocialPage() {
             </div>
         </div>
     );
+}
+
+function formatTimeAgo(dateStr: string): string {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
 }

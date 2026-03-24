@@ -1,14 +1,68 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase/config";
 import { SwipeCard } from "@/components/explore/swipe-card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, X, Heart } from "lucide-react";
+import { RefreshCw, X, Heart, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
-// TODO: Replace with Real AI API Data later
-const MOCK_DESTINATIONS = [
+// Destination images for AI-generated results (reliable Unsplash IDs)
+const DESTINATION_IMAGES: Record<string, string> = {
+    "japan": "photo-1493976040374-85c8e12f0c0e",
+    "greece": "photo-1570077188670-e3a8d69ac5ff",
+    "iceland": "photo-1476610182048-b716b8518aae",
+    "peru": "photo-1526392060635-9d6019884377",
+    "italy": "photo-1476514525535-07fb3b4ae5f1",
+    "france": "photo-1502602898657-3e91760cbb34",
+    "thailand": "photo-1528072164453-f4e8ef0d475a",
+    "morocco": "photo-1537996194471-e657df975ab4",
+    "default": "photo-1469854523086-cc02fe5d8800",
+};
+
+function getImageForDestination(destination: string): string {
+    const lower = destination.toLowerCase();
+    for (const [key, photoId] of Object.entries(DESTINATION_IMAGES)) {
+        if (lower.includes(key)) {
+            return `https://images.unsplash.com/${photoId}?q=80&w=2070&auto=format&fit=crop`;
+        }
+    }
+    return `https://images.unsplash.com/${DESTINATION_IMAGES.default}?q=80&w=2070&auto=format&fit=crop`;
+}
+
+// Pool of destinations to rotate through for AI generation
+const DESTINATION_POOL = [
+    "Kyoto, Japan",
+    "Santorini, Greece",
+    "Reykjavik, Iceland",
+    "Cusco, Peru",
+    "Amalfi Coast, Italy",
+    "Marrakech, Morocco",
+    "Bali, Indonesia",
+    "Barcelona, Spain",
+    "Cape Town, South Africa",
+    "Queenstown, New Zealand",
+    "Dubrovnik, Croatia",
+    "Havana, Cuba",
+    "Chiang Mai, Thailand",
+    "Lisbon, Portugal",
+    "Buenos Aires, Argentina",
+];
+
+interface ExploreDestination {
+    id: string;
+    name: string;
+    country: string;
+    imageUrl: string;
+    matchScore: number;
+    description: string;
+    tags: string[];
+}
+
+// Fallback mock destinations if API fails
+const FALLBACK_DESTINATIONS: ExploreDestination[] = [
     {
         id: "1",
         name: "Kyoto",
@@ -48,8 +102,116 @@ const MOCK_DESTINATIONS = [
 ];
 
 export default function ExplorePage() {
-    const [destinations, setDestinations] = useState(MOCK_DESTINATIONS);
-    const [removedIds, setRemovedIds] = useState<string[]>([]); // Track swiped cards
+    const [destinations, setDestinations] = useState<ExploreDestination[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [generating, setGenerating] = useState(false);
+    const [token, setToken] = useState<string | null>(null);
+    const [poolIndex, setPoolIndex] = useState(0);
+
+    // Get Firebase auth token
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const t = await user.getIdToken();
+                setToken(t);
+            } else {
+                setToken(null);
+            }
+        });
+        return () => unsubscribe();
+    }, []);
+
+    // Fetch AI-generated destination activities
+    const fetchDestinations = useCallback(async () => {
+        setGenerating(true);
+
+        // Pick a few destinations from the pool
+        const count = 4;
+        const selected: string[] = [];
+        for (let i = 0; i < count; i++) {
+            selected.push(DESTINATION_POOL[(poolIndex + i) % DESTINATION_POOL.length]);
+        }
+        setPoolIndex((prev) => (prev + count) % DESTINATION_POOL.length);
+
+        if (!token) {
+            // Not logged in, use fallback
+            setDestinations(FALLBACK_DESTINATIONS);
+            setGenerating(false);
+            setLoading(false);
+            return;
+        }
+
+        try {
+            // Build cards from pool with AI-generated descriptions
+            const cards: ExploreDestination[] = [];
+            
+            for (const dest of selected) {
+                const [city, country] = dest.split(", ");
+                
+                try {
+                    const res = await fetch("/api/explore", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({ destination: dest, count: 3 }),
+                    });
+                    
+                    const data = await res.json();
+                    const activities = data.activities || [];
+                    const topActivity = activities[0];
+                    
+                    cards.push({
+                        id: `${city}-${Date.now()}-${Math.random()}`,
+                        name: city,
+                        country: country,
+                        imageUrl: getImageForDestination(dest),
+                        matchScore: Math.floor(Math.random() * 15) + 85,
+                        description: topActivity?.description || `Discover the beauty of ${city}, ${country}. A perfect destination for your next adventure.`,
+                        tags: activities.slice(0, 3).map((a: any) => a.category || "sightseeing").filter((v: string, i: number, a: string[]) => a.indexOf(v) === i),
+                    });
+                } catch {
+                    cards.push({
+                        id: `${city}-${Date.now()}`,
+                        name: city,
+                        country: country,
+                        imageUrl: getImageForDestination(dest),
+                        matchScore: Math.floor(Math.random() * 15) + 85,
+                        description: `Discover the beauty of ${city}, ${country}. A perfect destination for your next adventure.`,
+                        tags: ["Explore", "Travel"],
+                    });
+                }
+            }
+            
+            setDestinations(cards);
+        } catch {
+            toast.error("Could not load suggestions. Using featured destinations.");
+            setDestinations(FALLBACK_DESTINATIONS);
+        } finally {
+            setGenerating(false);
+            setLoading(false);
+        }
+    }, [token, poolIndex]);
+
+    // Initial fetch
+    useEffect(() => {
+        if (token !== null || !loading) return;
+        // Slight delay to let auth settle
+        const timer = setTimeout(() => {
+            if (!token) {
+                setDestinations(FALLBACK_DESTINATIONS);
+                setLoading(false);
+            }
+        }, 2000);
+        return () => clearTimeout(timer);
+    }, [token, loading]);
+
+    useEffect(() => {
+        if (token) {
+            fetchDestinations();
+        }
+    }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const activeIndex = destinations.length - 1;
 
@@ -59,26 +221,44 @@ export default function ExplorePage() {
         const currentCard = destinations[activeIndex];
 
         if (direction === "right") {
-            toast.success(`Saved ${currentCard.name} to bucket list!`);
-            // TODO: Save to database via API
+            toast.success(`Saved ${currentCard.name} to bucket list! ✈️`);
+            // TODO: Save to visited_locations via API
         }
 
-        setRemovedIds((prev) => [...prev, currentCard.id]);
         setDestinations((prev) => prev.slice(0, -1));
     };
 
-    const resetStack = () => {
-        setDestinations(MOCK_DESTINATIONS);
-        setRemovedIds([]);
-        toast.info("Refreshed suggestions!");
+    const handleRefresh = () => {
+        fetchDestinations();
+        toast.info("Generating new AI suggestions...");
     };
+
+    if (loading) {
+        return (
+            <div className="flex h-screen w-full items-center justify-center bg-background">
+                <div className="text-center space-y-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                    <p className="text-muted-foreground">Loading destinations...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="relative min-h-screen w-full bg-background flex flex-col items-center pt-24 pb-12 overflow-hidden">
             {/* Header */}
             <div className="mb-8 text-center space-y-2 z-10 px-4">
                 <h1 className="text-4xl font-display font-bold text-primary">Discover & Explore</h1>
-                <p className="text-muted-foreground">AI-curated destinations just for you. Swipe right to save.</p>
+                <p className="text-muted-foreground">
+                    {generating ? (
+                        <span className="inline-flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 animate-pulse text-secondary" />
+                            AI is curating destinations for you...
+                        </span>
+                    ) : (
+                        "AI-curated destinations just for you. Swipe right to save."
+                    )}
+                </p>
             </div>
 
             {/* Card Stack */}
@@ -96,19 +276,26 @@ export default function ExplorePage() {
                     ) : (
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-card text-card-foreground rounded-3xl shadow-sm border border-dashed border-border/60">
                             <div className="p-4 bg-primary/10 rounded-full mb-4">
-                                <RefreshCw className="w-8 h-8 text-primary animate-spin-slow" />
+                                <Sparkles className="w-8 h-8 text-primary" />
                             </div>
-                            <h3 className="text-xl font-bold mb-2">No more suggestions</h3>
+                            <h3 className="text-xl font-bold mb-2">Ready for more?</h3>
                             <p className="text-muted-foreground text-sm mb-6 max-w-xs text-center">
-                                We've run out of recommendations for now. Check back later or adjust your preferences.
+                                Let our AI find your next perfect destination.
                             </p>
-                            <Button onClick={resetStack}>Start Over</Button>
+                            <Button onClick={handleRefresh} disabled={generating}>
+                                {generating ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                ) : (
+                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                )}
+                                Generate More
+                            </Button>
                         </div>
                     )}
                 </AnimatePresence>
             </div>
 
-            {/* Action Buttons (External Controls) */}
+            {/* Action Buttons */}
             {destinations.length > 0 && (
                 <div className="mt-8 flex gap-8 z-10">
                     <Button

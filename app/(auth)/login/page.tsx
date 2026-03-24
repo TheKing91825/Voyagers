@@ -33,7 +33,9 @@ export default function LoginPage() {
             });
 
             if (!res.ok) {
-                throw new Error("Failed to sync user with backend");
+                const errData = await res.json().catch(() => ({}));
+                console.error("Backend Error Data:", errData);
+                throw new Error(errData.error || "Failed to sync user with backend");
             }
             return true;
         } catch (error) {

@@ -41,7 +41,7 @@ const MOCK_REVIEWS = [
         content: "The view from Summit One Vanderbilt is insane. A bit pricey but worth it for the experience.",
         images: [
             "https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?q=80&w=2000&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1496442226666-8d4a0e94f92c?q=80&w=2000&auto=format&fit=crop"
+            "https://images.unsplash.com/photo-1534430480872-3498386e7856?q=80&w=2000&auto=format&fit=crop"
         ],
         likes: 89,
         comments: 12,

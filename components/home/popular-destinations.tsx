@@ -23,7 +23,7 @@ const DESTINATIONS = [
         name: "London, England",
         tours: "9 Tours",
         rating: 5,
-        image: "https://images.unsplash.com/photo-1513635269975-5969336ac9fb?q=80&w=2940&auto=format&fit=crop",
+        image: "https://images.unsplash.com/photo-1486299267070-83823f5448dd?q=80&w=2940&auto=format&fit=crop",
     },
     {
         name: "Paris, France",

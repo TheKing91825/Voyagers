@@ -37,8 +37,9 @@ export default function ProfilePage() {
                     const data = await res.json();
                     setProfile(data.profile);
                 }
-            } catch (error) {
-                console.error("Failed to fetch profile", error);
+                // 404 is expected for new users — no need to log an error
+            } catch {
+                // Network error only — silently handle
             } finally {
                 setLoading(false);
             }

@@ -17,9 +17,14 @@ export const GET = withAuth(async (_req: NextRequest, user) => {
             .from("users")
             .select("*, user_preferences(*), visited_locations(*)")
             .eq("firebase_uid", user.uid)
-            .single();
+            .maybeSingle();
 
-        if (error || !profile) {
+        if (error) {
+            console.error("Profile lookup error:", error);
+            return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+        }
+
+        if (!profile) {
             return NextResponse.json({ error: "Profile not found" }, { status: 404 });
         }
 

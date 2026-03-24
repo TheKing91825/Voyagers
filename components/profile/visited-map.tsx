@@ -5,8 +5,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useTheme } from "next-themes";
 
-// TODO: Move to env variable
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
 interface VisitedLocation {
     id: string;
@@ -26,6 +25,21 @@ export function VisitedMap({ locations, className }: VisitedMapProps) {
     const map = useRef<mapboxgl.Map | null>(null);
     const { theme } = useTheme();
     const [mapLoaded, setMapLoaded] = useState(false);
+
+    // Guard: if no Mapbox token, render a placeholder instead of crashing
+    if (!MAPBOX_TOKEN) {
+        return (
+            <div className={`relative w-full h-[400px] rounded-2xl overflow-hidden shadow-sm border border-border flex items-center justify-center bg-muted ${className}`}>
+                <div className="text-center space-y-2 p-8">
+                    <div className="text-4xl">🗺️</div>
+                    <p className="text-muted-foreground font-medium">World Map</p>
+                    <p className="text-xs text-muted-foreground">Configure your Mapbox token to see your travel map</p>
+                </div>
+            </div>
+        );
+    }
+
+    mapboxgl.accessToken = MAPBOX_TOKEN;
 
     useEffect(() => {
         if (map.current || !mapContainer.current) return;

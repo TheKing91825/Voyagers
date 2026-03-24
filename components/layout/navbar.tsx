@@ -2,44 +2,73 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { Menu, X } from "lucide-react";
 
 const NAV_LINKS = [
     { href: "/", label: "Home" },
     { href: "/explore", label: "Explore" },
     { href: "/my-trips", label: "My Trips" },
     { href: "/social", label: "Social" },
-    { href: "/profile", label: "Profile" },
 ] as const;
 
 export function Navbar() {
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
 
-    // TODO: replace with real auth state
+    // TODO: Replace with real auth state from Firebase/Supabase
     const isLoggedIn = false;
 
+    // Handle scroll effect
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 50);
+        };
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    const isHome = pathname === "/";
+
+    // Navbar style based on scroll and page
+    // On Home: Transparent at top, Glass/Solid on scroll
+    // On Others: Always solid/glass
+    const navClass = cn(
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b",
+        isHome && !scrolled
+            ? "bg-transparent border-transparent py-6"
+            : "bg-background/80 backdrop-blur-md border-border py-4 shadow-sm"
+    );
+
+    const textColor = isHome && !scrolled ? "text-white" : "text-foreground";
+    const logoColor = isHome && !scrolled ? "text-white" : "text-primary";
+
     return (
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <nav className="container mx-auto flex h-16 items-center justify-between px-4">
+        <header className={navClass}>
+            <nav className="container mx-auto flex items-center justify-between px-4 md:px-6">
                 {/* Logo */}
-                <Link href="/" className="text-xl font-bold tracking-tight">
+                <Link
+                    href="/"
+                    className={cn("text-2xl font-bold font-display tracking-tight transition-colors", logoColor)}
+                >
                     Voyager
                 </Link>
 
-                {/* Desktop links */}
-                <ul className="hidden md:flex items-center gap-6">
+                {/* Desktop Links */}
+                <ul className="hidden md:flex items-center gap-8">
                     {NAV_LINKS.map((link) => (
                         <li key={link.href}>
                             <Link
                                 href={link.href}
-                                className={`text-sm font-medium transition-colors hover:text-primary ${pathname === link.href
-                                        ? "text-primary"
-                                        : "text-muted-foreground"
-                                    }`}
+                                className={cn(
+                                    "text-sm font-medium transition-colors hover:text-primary/80",
+                                    pathname === link.href ? "text-primary font-bold" : textColor
+                                )}
                             >
                                 {link.label}
                             </Link>
@@ -47,77 +76,71 @@ export function Navbar() {
                     ))}
                 </ul>
 
-                {/* Desktop auth buttons */}
-                <div className="hidden md:flex items-center gap-2">
+                {/* Desktop Auth */}
+                <div className="hidden md:flex items-center gap-4">
                     {isLoggedIn ? (
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" className={textColor}>
                             Log out
                         </Button>
                     ) : (
                         <>
-                            <Button variant="ghost" size="sm" asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                className={cn("hover:bg-white/10", textColor)}
+                            >
                                 <Link href="/login">Log in</Link>
                             </Button>
-                            <Button size="sm" asChild>
+                            <Button
+                                size="sm"
+                                className="rounded-full px-6 bg-primary hover:bg-primary/90 text-white font-medium shadow-lg hover:shadow-xl transition-all"
+                                asChild
+                            >
                                 <Link href="/signup">Sign up</Link>
                             </Button>
                         </>
                     )}
                 </div>
 
-                {/* Mobile hamburger */}
+                {/* Mobile Menu */}
                 <Sheet open={open} onOpenChange={setOpen}>
                     <SheetTrigger asChild className="md:hidden">
-                        <Button variant="ghost" size="icon" aria-label="Open menu">
-                            {/* Simple hamburger icon */}
-                            <svg
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                <line x1="4" y1="6" x2="20" y2="6" />
-                                <line x1="4" y1="12" x2="20" y2="12" />
-                                <line x1="4" y1="18" x2="20" y2="18" />
-                            </svg>
+                        <Button variant="ghost" size="icon" className={textColor}>
+                            <Menu className="w-6 h-6" />
                         </Button>
                     </SheetTrigger>
-                    <SheetContent side="right" className="w-64">
-                        <div className="flex flex-col gap-4 mt-8">
-                            {NAV_LINKS.map((link) => (
-                                <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    onClick={() => setOpen(false)}
-                                    className={`text-lg font-medium ${pathname === link.href
-                                            ? "text-primary"
-                                            : "text-muted-foreground"
-                                        }`}
-                                >
-                                    {link.label}
-                                </Link>
-                            ))}
+                    <SheetContent side="right" className="w-80 p-0 border-l border-border bg-background/95 backdrop-blur-xl">
+                        <div className="p-6 space-y-6">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xl font-display font-bold text-primary">Voyager</span>
+                                <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
+                                    <X className="w-5 h-5" />
+                                </Button>
+                            </div>
                             <Separator />
-                            {isLoggedIn ? (
-                                <Button variant="ghost">Log out</Button>
-                            ) : (
-                                <>
-                                    <Button variant="ghost" asChild>
-                                        <Link href="/login" onClick={() => setOpen(false)}>
-                                            Log in
-                                        </Link>
-                                    </Button>
-                                    <Button asChild>
-                                        <Link href="/signup" onClick={() => setOpen(false)}>
-                                            Sign up
-                                        </Link>
-                                    </Button>
-                                </>
-                            )}
+                            <div className="flex flex-col gap-4">
+                                {NAV_LINKS.map((link) => (
+                                    <Link
+                                        key={link.href}
+                                        href={link.href}
+                                        onClick={() => setOpen(false)}
+                                        className={cn(
+                                            "text-lg font-medium py-2 px-4 rounded-lg transition-colors",
+                                            pathname === link.href
+                                                ? "bg-primary/10 text-primary"
+                                                : "text-muted-foreground hover:bg-muted/50"
+                                        )}
+                                    >
+                                        {link.label}
+                                    </Link>
+                                ))}
+                            </div>
+                            <div className="pt-8">
+                                <Button className="w-full rounded-full bg-primary text-white" size="lg" asChild>
+                                    <Link href="/signup">Get Started</Link>
+                                </Button>
+                            </div>
                         </div>
                     </SheetContent>
                 </Sheet>

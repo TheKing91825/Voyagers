@@ -123,11 +123,11 @@ export default function SocialPage() {
                     <SuggestedFriends />
 
                     {/* Trending Locations Widget */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-border">
+                    <div className="bg-card text-card-foreground rounded-2xl p-6 shadow-sm border border-border">
                         <h3 className="font-bold text-lg mb-4 text-foreground">Trending Now</h3>
                         <ul className="space-y-3">
                             {["Bali, Indonesia", "Tulum, Mexico", "Lisbon, Portugal", "Tokyo, Japan"].map((place, i) => (
-                                <li key={i} className="flex items-center justify-between text-sm group cursor-pointer hover:bg-gray-50 p-2 rounded-lg -mx-2 transition-colors">
+                                <li key={i} className="flex items-center justify-between text-sm group cursor-pointer hover:bg-muted/50 p-2 rounded-lg -mx-2 transition-colors">
                                     <span className="text-foreground/80 font-medium">#{i + 1} {place}</span>
                                     <span className="text-xs text-muted-foreground">2.4k posts</span>
                                 </li>

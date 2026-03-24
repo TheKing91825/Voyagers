@@ -38,7 +38,7 @@ export function ItineraryView({ days }: ItineraryViewProps) {
                                 <ActivityCard key={activity.id} activity={activity} />
                             ))
                         ) : (
-                            <div className="p-8 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center text-center bg-gray-50/50">
+                            <div className="p-8 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center text-center bg-muted/50">
                                 <p className="text-muted-foreground mb-4">No activities planned for this day.</p>
                                 <Button variant="outline" className="border-primary/20 text-primary">
                                     <Plus className="w-4 h-4 mr-2" /> Add Activity

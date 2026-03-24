@@ -28,7 +28,7 @@ export function TripCard({ trip }: TripCardProps) {
 
     return (
         <Link href={`/my-trips/${trip.id}`}>
-            <Card className="group overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 bg-white">
+            <Card className="group overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 bg-card text-card-foreground">
                 {/* Image Header */}
                 <div className="relative h-48 w-full overflow-hidden">
                     <Image
@@ -40,7 +40,7 @@ export function TripCard({ trip }: TripCardProps) {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
                     <div className="absolute top-3 right-3">
-                        <Badge variant={isUpcoming ? "default" : "secondary"} className={isUpcoming ? "bg-primary text-white" : "bg-white/80 backdrop-blur text-foreground"}>
+                        <Badge variant={isUpcoming ? "default" : "secondary"} className={isUpcoming ? "bg-primary text-white" : "bg-background/80 backdrop-blur text-foreground"}>
                             {trip.status === 'upcoming' ? 'Coming Soon' : trip.status}
                         </Badge>
                     </div>

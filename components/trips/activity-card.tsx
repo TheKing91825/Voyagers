@@ -27,7 +27,7 @@ const TYPE_COLORS = {
 
 export function ActivityCard({ activity }: ActivityCardProps) {
     return (
-        <Card className="flex items-start gap-4 p-4 mb-4 border border-border shadow-sm hover:shadow-md transition-shadow group bg-white">
+        <Card className="flex items-start gap-4 p-4 mb-4 border border-border shadow-sm hover:shadow-md transition-shadow group bg-card text-card-foreground">
             {/* Drag Handle */}
             <div className="mt-1 text-muted-foreground/30 group-hover:text-muted-foreground cursor-grab active:cursor-grabbing">
                 <GripVertical className="w-5 h-5" />

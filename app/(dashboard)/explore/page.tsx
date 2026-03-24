@@ -74,7 +74,7 @@ export default function ExplorePage() {
     };
 
     return (
-        <div className="relative min-h-screen w-full bg-slate-50 flex flex-col items-center pt-24 pb-12 overflow-hidden">
+        <div className="relative min-h-screen w-full bg-background flex flex-col items-center pt-24 pb-12 overflow-hidden">
             {/* Header */}
             <div className="mb-8 text-center space-y-2 z-10 px-4">
                 <h1 className="text-4xl font-display font-bold text-primary">Discover & Explore</h1>
@@ -94,7 +94,7 @@ export default function ExplorePage() {
                             />
                         ))
                     ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-dashed border-border/60">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-card text-card-foreground rounded-3xl shadow-sm border border-dashed border-border/60">
                             <div className="p-4 bg-primary/10 rounded-full mb-4">
                                 <RefreshCw className="w-8 h-8 text-primary animate-spin-slow" />
                             </div>

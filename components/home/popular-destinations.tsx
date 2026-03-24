@@ -76,7 +76,7 @@ export function PopularDestinations() {
 
                             {/* Content Card (Floating like "Tourm") */}
                             <div className="absolute bottom-6 left-6 right-6">
-                                <div className="bg-white rounded-2xl p-4 shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 relative z-20">
+                                <div className="bg-card text-card-foreground rounded-2xl p-4 shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 relative z-20">
                                     <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-md">
                                         <Star className="w-3 h-3 fill-current" /> {dest.rating}
                                     </div>

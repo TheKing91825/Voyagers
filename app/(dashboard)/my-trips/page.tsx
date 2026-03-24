@@ -86,7 +86,7 @@ export default function MyTripsPage() {
             </div>
 
             {filteredTrips.length === 0 && (
-                <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-border/60">
+                <div className="text-center py-20 bg-muted rounded-2xl border border-dashed border-border/60">
                     <p className="text-muted-foreground">No trips found in this category.</p>
                 </div>
             )}

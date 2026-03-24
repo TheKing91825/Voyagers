@@ -99,7 +99,7 @@ export function VisitedMap({ locations, className }: VisitedMapProps) {
         <div className={`relative w-full h-[400px] rounded-2xl overflow-hidden shadow-sm border border-border ${className}`}>
             <div ref={mapContainer} className="absolute inset-0" />
             {!mapLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
+                <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
                     <p className="text-muted-foreground animate-pulse">Loading World Map...</p>
                 </div>
             )}

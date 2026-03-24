@@ -116,7 +116,7 @@ export default function ProfilePage() {
                         </TabsList>
 
                         <TabsContent value="trips" className="mt-0">
-                            <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-border/60">
+                            <div className="text-center py-12 bg-muted rounded-2xl border border-dashed border-border/60">
                                 <p className="text-muted-foreground">No trips planned yet. Start exploring!</p>
                                 <Button className="mt-4 bg-primary text-white" onClick={() => router.push('/explore')}>
                                     Plan a Trip
@@ -132,7 +132,7 @@ export default function ProfilePage() {
                 {/* Sidebar - Right Column */}
                 <div className="space-y-6">
                     {/* Friends Widget */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-border">
+                    <div className="bg-card text-card-foreground p-6 rounded-2xl shadow-sm border border-border">
                         <h3 className="font-bold mb-4 text-primary">Friends</h3>
                         <div className="space-y-4">
                             <p className="text-sm text-muted-foreground">Connect with friends to see their travels.</p>

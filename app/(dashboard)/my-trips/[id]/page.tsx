@@ -102,13 +102,13 @@ export default function TripDetailPage({ params }: { params: { id: string } }) {
 
             {/* Main Content */}
             <div className="container max-w-5xl mx-auto px-4 py-8 md:px-6 -mt-8 relative z-20">
-                <div className="bg-white rounded-3xl shadow-xl min-h-[500px] border border-border overflow-hidden">
+                <div className="bg-card text-card-foreground rounded-3xl shadow-xl min-h-[500px] border border-border overflow-hidden">
                     <Tabs defaultValue="itinerary" className="w-full">
-                        <div className="border-b border-border bg-gray-50/50 px-6 py-2">
+                        <div className="border-b border-border bg-muted/50 px-6 py-2">
                             <TabsList className="bg-transparent">
-                                <TabsTrigger value="itinerary" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Itinerary</TabsTrigger>
-                                <TabsTrigger value="budget" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Budget</TabsTrigger>
-                                <TabsTrigger value="settings" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Settings</TabsTrigger>
+                                <TabsTrigger value="itinerary" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">Itinerary</TabsTrigger>
+                                <TabsTrigger value="budget" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">Budget</TabsTrigger>
+                                <TabsTrigger value="settings" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">Settings</TabsTrigger>
                             </TabsList>
                         </div>
 

@@ -26,7 +26,7 @@ interface ReviewCardProps {
 
 export function ReviewCard({ review }: ReviewCardProps) {
     return (
-        <Card className="border-none shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden bg-white">
+        <Card className="border-none shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden bg-card text-card-foreground">
             {/* Header */}
             <CardHeader className="flex flex-row items-center justify-between p-4 pb-0">
                 <div className="flex items-center gap-3">

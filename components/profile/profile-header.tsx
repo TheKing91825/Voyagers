@@ -19,7 +19,7 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({ user, stats, isOwnProfile = false }: ProfileHeaderProps) {
     return (
-        <div className="relative mb-20 bg-white rounded-3xl overflow-hidden shadow-sm border border-border/50">
+        <div className="relative mb-20 bg-card text-card-foreground rounded-3xl overflow-hidden shadow-sm border border-border/50">
             {/* Cover Image */}
             <div className="h-48 md:h-64 relative w-full bg-gray-100">
                 <Image
@@ -70,7 +70,7 @@ export function ProfileHeader({ user, stats, isOwnProfile = false }: ProfileHead
             </div>
 
             {/* Stats Bar */}
-            <div className="flex justify-end items-center p-4 md:p-6 bg-white min-h-[80px]">
+            <div className="flex justify-end items-center p-4 md:p-6 bg-card min-h-[80px]">
                 <div className="flex gap-8 mr-4 md:mr-10">
                     <div className="text-center">
                         <div className="text-xl font-bold text-primary">{stats.countries}</div>

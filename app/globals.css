@@ -12,6 +12,11 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
 
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
@@ -34,13 +39,34 @@
   --accent: #E2E8F0; /* Slate-200 - subtle gray */
   --muted: #64748B; /* Slate-500 - secondary text */
   --border: #E2E8F0; /* Slate-200 - light borders */
+  
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+
   --radius: 0.75rem; /* Rounded corners */
   
   --font-display: "Playfair Display", serif; /* Elegant serif for hero */
   --font-sans: "Inter", sans-serif; /* Clean sans for ui */
 }
 
-/* Dark mode intentionally disabled to maintain Tourm aesthetic (white cards + dark text) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #020617; /* Slate-950 */
+    --foreground: #F8FAFC; /* Slate-50 */
+    --primary: #10B981; /* Emerald-500 - brighter for dark mode */
+    --secondary: #FCD34D; /* Amber-300 */
+    --accent: #1E293B; /* Slate-800 */
+    --muted: #94A3B8; /* Slate-400 */
+    --border: #1E293B; /* Slate-800 */
+    
+    --card: #0F172A; /* Slate-900 */
+    --card-foreground: #F8FAFC;
+    --popover: #0F172A;
+    --popover-foreground: #F8FAFC;
+  }
+}
 
 body {
   background-color: var(--background);

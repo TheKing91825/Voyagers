@@ -10,7 +10,7 @@ const MOCK_SUGGESTIONS = [
 
 export function SuggestedFriends() {
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-border">
+        <div className="bg-card text-card-foreground rounded-2xl p-6 shadow-sm border border-border">
             <h3 className="font-bold text-lg mb-4 text-foreground">Suggested for you</h3>
             <div className="space-y-4">
                 {MOCK_SUGGESTIONS.map((user) => (

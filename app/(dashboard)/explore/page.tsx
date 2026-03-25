@@ -125,7 +125,7 @@ export default function ExplorePage() {
     const fetchDestinations = useCallback(async () => {
         setGenerating(true);
 
-        // Pick a few destinations from the pool
+        // Pick destinations from the pool
         const count = 4;
         const selected: string[] = [];
         for (let i = 0; i < count; i++) {
@@ -134,7 +134,6 @@ export default function ExplorePage() {
         setPoolIndex((prev) => (prev + count) % DESTINATION_POOL.length);
 
         if (!token) {
-            // Not logged in, use fallback
             setDestinations(FALLBACK_DESTINATIONS);
             setGenerating(false);
             setLoading(false);
@@ -142,48 +141,43 @@ export default function ExplorePage() {
         }
 
         try {
-            // Build cards from pool with AI-generated descriptions
-            const cards: ExploreDestination[] = [];
+            // Make ONE API call for the first destination to get AI descriptions
+            const primaryDest = selected[0];
+            let aiActivities: any[] = [];
             
-            for (const dest of selected) {
-                const [city, country] = dest.split(", ");
-                
-                try {
-                    const res = await fetch("/api/explore", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`,
-                        },
-                        body: JSON.stringify({ destination: dest, count: 3 }),
-                    });
-                    
-                    const data = await res.json();
-                    const activities = data.activities || [];
-                    const topActivity = activities[0];
-                    
-                    cards.push({
-                        id: `${city}-${Date.now()}-${Math.random()}`,
-                        name: city,
-                        country: country,
-                        imageUrl: getImageForDestination(dest),
-                        matchScore: Math.floor(Math.random() * 15) + 85,
-                        description: topActivity?.description || `Discover the beauty of ${city}, ${country}. A perfect destination for your next adventure.`,
-                        tags: activities.slice(0, 3).map((a: any) => a.category || "sightseeing").filter((v: string, i: number, a: string[]) => a.indexOf(v) === i),
-                    });
-                } catch {
-                    cards.push({
-                        id: `${city}-${Date.now()}`,
-                        name: city,
-                        country: country,
-                        imageUrl: getImageForDestination(dest),
-                        matchScore: Math.floor(Math.random() * 15) + 85,
-                        description: `Discover the beauty of ${city}, ${country}. A perfect destination for your next adventure.`,
-                        tags: ["Explore", "Travel"],
-                    });
-                }
+            try {
+                const res = await fetch("/api/explore", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ destination: primaryDest, count: 5 }),
+                });
+                const data = await res.json();
+                aiActivities = data.activities || [];
+            } catch {
+                // AI failed, continue with static descriptions
             }
-            
+
+            // Build cards for all selected destinations
+            const cards: ExploreDestination[] = selected.map((dest, idx) => {
+                const [city, country] = dest.split(", ");
+                const activity = aiActivities[idx];
+                
+                return {
+                    id: `${city}-${Date.now()}-${idx}`,
+                    name: city,
+                    country: country,
+                    imageUrl: getImageForDestination(dest),
+                    matchScore: Math.floor(Math.random() * 15) + 85,
+                    description: activity?.description || `Discover the beauty of ${city}, ${country}. A perfect destination for your next adventure.`,
+                    tags: activity
+                        ? [activity.category || "sightseeing", activity.best_time?.toLowerCase() || "anytime"].filter(Boolean)
+                        : ["Explore", "Travel"],
+                };
+            });
+
             setDestinations(cards);
         } catch {
             toast.error("Could not load suggestions. Using featured destinations.");

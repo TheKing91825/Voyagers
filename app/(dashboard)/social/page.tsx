@@ -6,7 +6,7 @@ import { auth } from "@/lib/firebase/config";
 import { ReviewCard } from "@/components/social/review-card";
 import { SuggestedFriends } from "@/components/social/suggested-friends";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, Star } from "lucide-react";
+import { PlusCircle, Loader2, Star, Pen } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -72,7 +72,8 @@ export default function SocialPage() {
     // Review form state
     const [reviewCity, setReviewCity] = useState("");
     const [reviewCountry, setReviewCountry] = useState("");
-    const [reviewContent, setReviewContent] = useState("");
+    const [reviewTitle, setReviewTitle] = useState("");
+    const [reviewBody, setReviewBody] = useState("");
     const [reviewRating, setReviewRating] = useState(5);
 
     useEffect(() => {
@@ -103,7 +104,8 @@ export default function SocialPage() {
                             city: r.city,
                             country: r.country,
                             rating: r.rating,
-                            content: r.content,
+                            title: r.title || null,
+                            content: r.body,
                             images: r.image_urls || [],
                             likes: r.likes_count || 0,
                             comments: r.comments_count || 0,
@@ -123,7 +125,7 @@ export default function SocialPage() {
     }, []);
 
     const handleSubmit = async () => {
-        if (!reviewCity.trim() || !reviewContent.trim()) {
+        if (!reviewCity.trim() || !reviewBody.trim()) {
             toast.error("Please fill in the destination and review.");
             return;
         }
@@ -145,8 +147,9 @@ export default function SocialPage() {
                 body: JSON.stringify({
                     city: reviewCity.trim(),
                     country: reviewCountry.trim() || "Unknown",
+                    title: reviewTitle.trim() || null,
+                    body: reviewBody.trim(),
                     rating: reviewRating,
-                    content: reviewContent.trim(),
                 }),
             });
 
@@ -166,7 +169,8 @@ export default function SocialPage() {
                         city: reviewCity.trim(),
                         country: reviewCountry.trim() || "Unknown",
                         rating: reviewRating,
-                        content: reviewContent.trim(),
+                        title: reviewTitle.trim() || null,
+                        content: reviewBody.trim(),
                         images: [],
                         likes: 0,
                         comments: 0,
@@ -178,7 +182,8 @@ export default function SocialPage() {
                 // Reset form
                 setReviewCity("");
                 setReviewCountry("");
-                setReviewContent("");
+                setReviewTitle("");
+                setReviewBody("");
                 setReviewRating(5);
                 setIsReviewOpen(false);
             } else {
@@ -261,13 +266,22 @@ export default function SocialPage() {
                                         </div>
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="review">Your Review</Label>
+                                        <Label htmlFor="review-title">Title <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                                        <Input
+                                            id="review-title"
+                                            placeholder="e.g. Best weekend ever!"
+                                            value={reviewTitle}
+                                            onChange={(e) => setReviewTitle(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="review-body">Your Review *</Label>
                                         <textarea
-                                            id="review"
-                                            placeholder="Tell us about it..."
-                                            value={reviewContent}
-                                            onChange={(e) => setReviewContent(e.target.value)}
-                                            className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                            id="review-body"
+                                            placeholder="Tell us about your experience..."
+                                            value={reviewBody}
+                                            onChange={(e) => setReviewBody(e.target.value)}
+                                            className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                         />
                                     </div>
                                 </div>

@@ -50,7 +50,7 @@ export function SwipeCard({ destination, onSwipe, active }: SwipeCardProps) {
             drag={active ? "x" : false}
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={handleDragEnd}
-            className={`absolute inset-0 w-full h-full rounded-3xl overflow-hidden shadow-xl bg-white ${!active && "scale-95 opacity-50 blur-[1px]"
+            className={`absolute inset-0 w-full h-full rounded-3xl overflow-hidden shadow-xl bg-card ${!active && "scale-95 opacity-50 blur-[1px]"
                 }`}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >

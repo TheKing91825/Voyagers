@@ -92,7 +92,7 @@ export default function TripDetailPage({ params }: { params: { id: string } }) {
                                     <UserPlus className="w-4 h-4" />
                                 </Button>
                             </div>
-                            <Button className="rounded-full bg-white text-primary hover:bg-gray-100 font-bold">
+                            <Button className="rounded-full bg-secondary text-primary hover:bg-secondary/80 font-bold">
                                 <Share2 className="w-4 h-4 mr-2" /> Share
                             </Button>
                         </div>

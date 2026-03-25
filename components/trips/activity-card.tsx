@@ -19,10 +19,10 @@ interface ActivityCardProps {
 }
 
 const TYPE_COLORS = {
-    flight: "bg-blue-100 text-blue-600 border-blue-200",
-    hotel: "bg-purple-100 text-purple-600 border-purple-200",
-    food: "bg-orange-100 text-orange-600 border-orange-200",
-    attraction: "bg-green-100 text-green-600 border-green-200",
+    flight: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    hotel: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+    food: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+    attraction: "bg-green-500/20 text-green-400 border-green-500/30",
 };
 
 export function ActivityCard({ activity }: ActivityCardProps) {

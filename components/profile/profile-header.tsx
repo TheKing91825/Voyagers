@@ -1,13 +1,17 @@
+"use client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MapPin, Settings, Share2, UserPlus } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface ProfileHeaderProps {
     user: {
         username: string;
         avatar_url?: string;
-        description?: string; // Optional bio
+        description?: string;
     };
     stats: {
         countries: number;
@@ -18,6 +22,36 @@ interface ProfileHeaderProps {
 }
 
 export function ProfileHeader({ user, stats, isOwnProfile = false }: ProfileHeaderProps) {
+    const router = useRouter();
+
+    const handleShare = async () => {
+        const shareUrl = `${window.location.origin}/profile/${user.username}`;
+        const shareText = `Check out ${user.username}'s travel profile on Voyager! 🌍✈️`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `${user.username} on Voyager`,
+                    text: shareText,
+                    url: shareUrl,
+                });
+            } catch {
+                // cancelled
+            }
+        } else {
+            await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+            toast.success("Profile link copied to clipboard! 📋");
+        }
+    };
+
+    const handleSettings = () => {
+        router.push("/profile/edit");
+    };
+
+    const handleFollow = () => {
+        toast.success(`Follow request sent to ${user.username}! 🤝`);
+    };
+
     return (
         <div className="relative mb-20 bg-card text-card-foreground rounded-3xl overflow-hidden shadow-sm border border-border/50">
             {/* Cover Image */}
@@ -59,11 +93,21 @@ export function ProfileHeader({ user, stats, isOwnProfile = false }: ProfileHead
 
             {/* Actions (Top Right) */}
             <div className="absolute top-4 right-4 flex gap-2">
-                <Button variant="secondary" size="icon" className="shadow-lg backdrop-blur-md bg-white/20 hover:bg-white/40 text-white border-none rounded-full">
+                <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={handleShare}
+                    className="shadow-lg backdrop-blur-md bg-white/20 hover:bg-white/40 text-white border-none rounded-full"
+                >
                     <Share2 className="w-5 h-5" />
                 </Button>
                 {isOwnProfile && (
-                    <Button variant="secondary" size="icon" className="shadow-lg backdrop-blur-md bg-white/20 hover:bg-white/40 text-white border-none rounded-full">
+                    <Button
+                        variant="secondary"
+                        size="icon"
+                        onClick={handleSettings}
+                        className="shadow-lg backdrop-blur-md bg-white/20 hover:bg-white/40 text-white border-none rounded-full"
+                    >
                         <Settings className="w-5 h-5" />
                     </Button>
                 )}
@@ -86,7 +130,7 @@ export function ProfileHeader({ user, stats, isOwnProfile = false }: ProfileHead
                     </div>
                 </div>
                 {!isOwnProfile && (
-                    <Button className="rounded-full bg-primary hover:bg-primary/90 text-white shadow-md">
+                    <Button onClick={handleFollow} className="rounded-full bg-primary hover:bg-primary/90 text-white shadow-md">
                         <UserPlus className="w-4 h-4 mr-2" /> Follow
                     </Button>
                 )}

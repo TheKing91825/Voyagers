@@ -297,7 +297,7 @@ export default function SocialPage() {
 
                     <div className="space-y-6">
                         {reviews.map((review) => (
-                            <ReviewCard key={review.id} review={review} />
+                            <ReviewCard key={review.id} review={review} token={token} />
                         ))}
                     </div>
                 </div>

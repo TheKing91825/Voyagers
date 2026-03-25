@@ -53,8 +53,8 @@ export function PopularDestinations() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {DESTINATIONS.map((dest, i) => (
+                        <Link key={dest.name} href={`/explore?q=${encodeURIComponent(dest.name.split(",")[0].trim())}`}>
                         <motion.div
-                            key={dest.name}
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
@@ -90,6 +90,7 @@ export function PopularDestinations() {
                                 </div>
                             </div>
                         </motion.div>
+                        </Link>
                     ))}
                 </div>
             </div>

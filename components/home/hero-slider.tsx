@@ -134,8 +134,11 @@ export function HeroSlider() {
                                     variant="outline"
                                     size="lg"
                                     className="glass-panel text-white hover:bg-white/20 border-white/30 h-14 rounded-full px-8 backdrop-blur-md transition-all duration-300"
+                                    asChild
                                 >
-                                    View Details
+                                    <Link href={`/my-trips`}>
+                                        View My Trips
+                                    </Link>
                                 </Button>
                             </div>
                         </motion.div>

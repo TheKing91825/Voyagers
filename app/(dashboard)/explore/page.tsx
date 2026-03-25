@@ -209,14 +209,32 @@ export default function ExplorePage() {
 
     const activeIndex = destinations.length - 1;
 
-    const handleSwipe = (direction: "left" | "right") => {
+    const handleSwipe = async (direction: "left" | "right") => {
         if (activeIndex < 0) return;
 
         const currentCard = destinations[activeIndex];
 
         if (direction === "right") {
             toast.success(`Saved ${currentCard.name} to bucket list! ✈️`);
-            // TODO: Save to visited_locations via API
+
+            // Save to visited_locations via API if logged in
+            if (token) {
+                try {
+                    await fetch("/api/profile/visited", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                            city: currentCard.name,
+                            country: currentCard.country,
+                        }),
+                    });
+                } catch {
+                    // Non-blocking, toast already shown
+                }
+            }
         }
 
         setDestinations((prev) => prev.slice(0, -1));

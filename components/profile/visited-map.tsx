@@ -39,51 +39,54 @@ export function VisitedMap({ locations, className }: VisitedMapProps) {
 
                 const map = new mapboxgl.Map({
                     container: mapContainer.current,
-                    style: "mapbox://styles/mapbox/dark-v11",
-                    center: [20, 20],
-                    zoom: 1.5,
+                    style: "mapbox://styles/mapbox/standard",
                     projection: "globe" as any,
+                    zoom: 1,
+                    center: [30, 15],
                     interactive: true,
-                    attributionControl: false,
                 });
 
                 mapRef.current = map;
 
-                map.on("load", () => {
+                // Add navigation control (with compass like the reference)
+                map.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+                // Disable scroll zoom for cleaner UX (drag still works)
+                map.scrollZoom.disable();
+
+                map.on("style.load", () => {
                     if (cancelled) return;
                     setMapLoaded(true);
 
+                    // Default atmosphere — subtle glow like the reference
                     try {
-                        map.setFog({
-                            range: [1.0, 8.0],
-                            color: "#1a1a2e",
-                            "horizon-blend": 0.1,
-                        } as any);
+                        map.setFog({} as any);
                     } catch {
-                        // Fog API may not be supported in all versions
+                        // Fog API may not be supported
                     }
 
-                    // Add markers
+                    // Add markers for visited locations
                     locations.forEach((loc) => {
                         if (!loc.latitude || !loc.longitude) return;
 
                         const el = document.createElement("div");
-                        el.style.width = "14px";
-                        el.style.height = "14px";
-                        el.style.backgroundColor = "#D4AF37";
+                        el.style.width = "16px";
+                        el.style.height = "16px";
+                        el.style.backgroundColor = "#EF4444";
                         el.style.borderRadius = "50%";
-                        el.style.border = "2px solid rgba(255,255,255,0.8)";
-                        el.style.boxShadow = "0 0 0 4px rgba(212, 175, 55, 0.3), 0 2px 8px rgba(0,0,0,0.3)";
+                        el.style.border = "2.5px solid #fff";
+                        el.style.boxShadow = "0 2px 6px rgba(0,0,0,0.35)";
                         el.style.cursor = "pointer";
-                        el.style.transition = "transform 0.2s";
-                        el.onmouseenter = () => { el.style.transform = "scale(1.5)"; };
+                        el.style.transition = "transform 0.2s ease";
+                        el.onmouseenter = () => { el.style.transform = "scale(1.4)"; };
                         el.onmouseleave = () => { el.style.transform = "scale(1)"; };
 
                         const popup = new mapboxgl.Popup({
                             offset: 25,
                             closeButton: false,
+                            maxWidth: "220px",
                         }).setHTML(`
-                            <div style="padding: 4px 8px; font-size: 13px; font-weight: 600;">
+                            <div style="padding: 6px 10px; font-size: 13px; font-weight: 600; color: #1a1a1a;">
                                 📍 ${loc.city}, ${loc.country}
                             </div>
                         `);
@@ -100,11 +103,6 @@ export function VisitedMap({ locations, className }: VisitedMapProps) {
                 map.on("error", (e: any) => {
                     console.error("Mapbox error:", e);
                 });
-
-                map.addControl(
-                    new mapboxgl.NavigationControl({ showCompass: false }),
-                    "top-right"
-                );
             } catch (err) {
                 console.error("Failed to load Mapbox:", err);
                 if (!cancelled) setMapError(true);

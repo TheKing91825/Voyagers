@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 interface VisitedLocation {
@@ -20,10 +20,11 @@ export function VisitedMap({ locations, className }: VisitedMapProps) {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapRef = useRef<any>(null);
     const markersRef = useRef<any[]>([]);
+    const spinIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const userInteractingRef = useRef(false);
     const [mapLoaded, setMapLoaded] = useState(false);
     const [mapError, setMapError] = useState(false);
 
-    // Single effect: initialize map on mount
     useEffect(() => {
         const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
         if (!token || !mapContainer.current || mapRef.current) return;
@@ -41,63 +42,68 @@ export function VisitedMap({ locations, className }: VisitedMapProps) {
                     container: mapContainer.current,
                     style: "mapbox://styles/mapbox/standard",
                     projection: "globe" as any,
-                    zoom: 1,
-                    center: [30, 15],
+                    zoom: 1.5,
+                    center: [20, 30],
+                    pitch: 0,
+                    bearing: 0,
                     interactive: true,
                 });
 
                 mapRef.current = map;
 
-                // Add navigation control (with compass like the reference)
+                // Navigation controls
                 map.addControl(new mapboxgl.NavigationControl(), "top-right");
+                map.scrollZoom.enable();
 
-                // Disable scroll zoom for cleaner UX (drag still works)
-                map.scrollZoom.disable();
-
+                // Atmosphere / fog
                 map.on("style.load", () => {
+                    if (cancelled) return;
+                    map.setFog({
+                        'color': 'rgb(186, 210, 235)',
+                        'high-color': 'rgb(36, 92, 223)',
+                        'horizon-blend': 0.02,
+                        'space-color': 'rgb(11, 11, 25)',
+                        'star-intensity': 0.6,
+                    } as any);
+                });
+
+                map.on("load", async () => {
                     if (cancelled) return;
                     setMapLoaded(true);
 
-                    // Default atmosphere — subtle glow like the reference
-                    try {
-                        map.setFog({} as any);
-                    } catch {
-                        // Fog API may not be supported
-                    }
+                    // ── Geocode & add markers ──
+                    await addLocationMarkers(map, mapboxgl, token, locations, markersRef);
 
-                    // Add markers for visited locations
-                    locations.forEach((loc) => {
-                        if (!loc.latitude || !loc.longitude) return;
+                    // ── Rotating globe ──
+                    const spinGlobe = () => {
+                        if (!userInteractingRef.current && mapRef.current) {
+                            mapRef.current.easeTo({
+                                center: [mapRef.current.getCenter().lng + 0.4, mapRef.current.getCenter().lat],
+                                duration: 1000,
+                                easing: (n: number) => n,
+                            });
+                        }
+                    };
 
-                        const el = document.createElement("div");
-                        el.style.width = "16px";
-                        el.style.height = "16px";
-                        el.style.backgroundColor = "#EF4444";
-                        el.style.borderRadius = "50%";
-                        el.style.border = "2.5px solid #fff";
-                        el.style.boxShadow = "0 2px 6px rgba(0,0,0,0.35)";
-                        el.style.cursor = "pointer";
-                        el.style.transition = "transform 0.2s ease";
-                        el.onmouseenter = () => { el.style.transform = "scale(1.4)"; };
-                        el.onmouseleave = () => { el.style.transform = "scale(1)"; };
+                    // Pause rotation on interaction
+                    map.on("mousedown", () => { userInteractingRef.current = true; });
+                    map.on("touchstart", () => { userInteractingRef.current = true; });
+                    map.on("mouseup", () => { userInteractingRef.current = false; });
+                    map.on("dragend", () => { userInteractingRef.current = false; });
+                    map.on("pitchend", () => { userInteractingRef.current = false; });
+                    map.on("rotateend", () => { userInteractingRef.current = false; });
+                    map.on("touchend", () => { userInteractingRef.current = false; });
 
-                        const popup = new mapboxgl.Popup({
-                            offset: 25,
-                            closeButton: false,
-                            maxWidth: "220px",
-                        }).setHTML(`
-                            <div style="padding: 6px 10px; font-size: 13px; font-weight: 600; color: #1a1a1a;">
-                                📍 ${loc.city}, ${loc.country}
-                            </div>
-                        `);
+                    // Resume rotation after 3s of no interaction
+                    const resumeAfterDelay = () => {
+                        setTimeout(() => {
+                            userInteractingRef.current = false;
+                        }, 3000);
+                    };
+                    map.on("moveend", resumeAfterDelay);
 
-                        const marker = new mapboxgl.Marker(el)
-                            .setLngLat([loc.longitude, loc.latitude])
-                            .setPopup(popup)
-                            .addTo(map);
-
-                        markersRef.current.push(marker);
-                    });
+                    // Start spinning
+                    spinIntervalRef.current = setInterval(spinGlobe, 1000);
                 });
 
                 map.on("error", (e: any) => {
@@ -111,6 +117,10 @@ export function VisitedMap({ locations, className }: VisitedMapProps) {
 
         return () => {
             cancelled = true;
+            if (spinIntervalRef.current) {
+                clearInterval(spinIntervalRef.current);
+                spinIntervalRef.current = null;
+            }
             markersRef.current.forEach((m) => m.remove());
             markersRef.current = [];
             if (mapRef.current) {
@@ -118,9 +128,9 @@ export function VisitedMap({ locations, className }: VisitedMapProps) {
                 mapRef.current = null;
             }
         };
-    }, []); // Empty deps — init once
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // If token missing on server render, show placeholder
+    // Placeholder: no token
     if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
         return (
             <div className={`relative w-full h-[400px] rounded-2xl overflow-hidden shadow-sm border border-border flex items-center justify-center bg-muted ${className || ""}`}>
@@ -158,4 +168,100 @@ export function VisitedMap({ locations, className }: VisitedMapProps) {
             )}
         </div>
     );
+}
+
+/* ─── Geocode locations & add markers ─── */
+async function addLocationMarkers(
+    map: any,
+    mapboxgl: any,
+    token: string,
+    locations: VisitedLocation[],
+    markersRef: React.MutableRefObject<any[]>
+) {
+    const resolved: { coordinates: [number, number]; location: VisitedLocation }[] = [];
+
+    for (const loc of locations) {
+        let lng = loc.longitude;
+        let lat = loc.latitude;
+
+        // If coords are missing/zero, geocode via Mapbox
+        if (!lat || !lng || (lat === 0 && lng === 0)) {
+            try {
+                const query = `${loc.city}, ${loc.country}`;
+                const res = await fetch(
+                    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&limit=1`
+                );
+                const data = await res.json();
+                if (data.features && data.features.length > 0) {
+                    [lng, lat] = data.features[0].center;
+                } else {
+                    continue; // skip if geocode fails
+                }
+            } catch {
+                continue;
+            }
+        }
+
+        // Create marker element — large pin style like user's old code
+        const markerEl = document.createElement("div");
+        markerEl.innerHTML = `<svg width="30" height="40" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 20 12 20s12-11 12-20c0-6.627-5.373-12-12-12z" fill="#ff6b6b"/>
+            <circle cx="12" cy="11" r="5" fill="white"/>
+        </svg>`;
+        markerEl.style.cursor = "pointer";
+        markerEl.style.transition = "transform 0.2s ease";
+        markerEl.style.filter = "drop-shadow(0 2px 6px rgba(0,0,0,0.4))";
+        markerEl.onmouseenter = () => { markerEl.style.transform = "scale(1.3) translateY(-4px)"; };
+        markerEl.onmouseleave = () => { markerEl.style.transform = "scale(1)"; };
+
+        // Popup
+        const popup = new mapboxgl.Popup({
+            offset: 30,
+            closeButton: false,
+            maxWidth: "240px",
+        }).setHTML(`
+            <div style="padding: 8px 12px; font-size: 14px; font-weight: 600; color: #1a1a1a;">
+                📍 ${loc.city}, ${loc.country}
+            </div>
+        `);
+
+        // Click to fly to location
+        markerEl.addEventListener("click", () => {
+            map.flyTo({
+                center: [lng, lat],
+                zoom: 8,
+                pitch: 45,
+                duration: 2000,
+            });
+        });
+
+        const marker = new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
+            .setLngLat([lng, lat])
+            .setPopup(popup)
+            .addTo(map);
+
+        markersRef.current.push(marker);
+        resolved.push({ coordinates: [lng, lat], location: loc });
+    }
+
+    // Fit bounds to show all markers after a short delay
+    if (resolved.length > 1) {
+        const bounds = new mapboxgl.LngLatBounds();
+        resolved.forEach((r) => bounds.extend(r.coordinates));
+        setTimeout(() => {
+            map.fitBounds(bounds, {
+                padding: 80,
+                maxZoom: 8,
+                duration: 2000,
+            });
+        }, 1500);
+    } else if (resolved.length === 1) {
+        setTimeout(() => {
+            map.flyTo({
+                center: resolved[0].coordinates,
+                zoom: 4,
+                duration: 2000,
+            });
+        }, 1500);
+    }
 }

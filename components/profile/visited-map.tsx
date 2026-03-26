@@ -202,17 +202,20 @@ async function addLocationMarkers(
             }
         }
 
-        // Create marker element — large pin style like user's old code
+        // Create marker element — smaller pin style to match user's old code
         const markerEl = document.createElement("div");
-        markerEl.innerHTML = `<svg width="30" height="40" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 20 12 20s12-11 12-20c0-6.627-5.373-12-12-12z" fill="#ff6b6b"/>
-            <circle cx="12" cy="11" r="5" fill="white"/>
-        </svg>`;
+        markerEl.className = "custom-marker group";
+        
+        // Wrap the SVG in an inner div to handle hover scaling without disrupting Mapbox's translate transforms
+        markerEl.innerHTML = `
+            <div class="transition-transform duration-200 ease-in-out group-hover:scale-125 group-hover:-translate-y-1">
+                <svg width="24" height="32" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                    <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 20 12 20s12-11 12-20c0-6.627-5.373-12-12-12z" fill="#ff6b6b"/>
+                    <circle cx="12" cy="11" r="4.5" fill="white"/>
+                </svg>
+            </div>
+        `;
         markerEl.style.cursor = "pointer";
-        markerEl.style.transition = "transform 0.2s ease";
-        markerEl.style.filter = "drop-shadow(0 2px 6px rgba(0,0,0,0.4))";
-        markerEl.onmouseenter = () => { markerEl.style.transform = "scale(1.3) translateY(-4px)"; };
-        markerEl.onmouseleave = () => { markerEl.style.transform = "scale(1)"; };
 
         // Popup
         const popup = new mapboxgl.Popup({
